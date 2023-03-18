@@ -1,0 +1,1 @@
+# hh-solidity-template
