@@ -2,6 +2,7 @@
 pragma solidity ^0.8.7;
 
 import "@openzappelin/contracts/token/ERC721/IERC721.sol";
+import "@openzappelin/contracts/security/ReentrenceyGuard.sol";
 
 error NFTMarketplace__PriceMustBeAboveZero();
 error NFTMarketplace__NotApprovedForMarketplace();
@@ -10,7 +11,7 @@ error NFTMarketplace__InvalidOwner( address nftAddress, uint256 tokenId);
 error NFTMarketplace__ItemNotListed( address nftAddress, uint256 tokenId);
 error NFTMarketplace__PriceNotMet( address nftAddress, uint256 tokenId, uint256 nftPrice, uint256 sentMoney);
 
-contract NFTMarketplace {
+contract NFTMarketplace is ReentrenceyGuard {
     struct Listing {
         uint256 price;
         address sender;
@@ -21,12 +22,18 @@ contract NFTMarketplace {
         uint256 indexed tokenId,
         uint256 indexed price
     )
-    
+
     event ItemBought(
         address indexed buyer,
         address indexed nftAddress,
         uint256 indexed tokenId,
         uint256 nftPrice
+    )
+
+    event ItemCanceled(
+        address indexed ownerAddress,
+        address indexed nftAddress,
+        uint256 indexed tokenId,
     )
 
     // NFT contract address -> NFT tokenId -> Listing
@@ -93,7 +100,7 @@ contract NFTMarketplace {
         emit ItemListed(msg.sender, nftAddress, tokenId, price);
     }
 
-    function buyItem(address nftAddress, uint256 tokenId) external payable itemIsListed{
+    function buyItem(address nftAddress, uint256 tokenId) external payable nonReentrant itemIsListed(nftAddress, tokenId){
         Listing memory listedItem = s_listings[nftAddress][tokenId];
         if(msg.value < listedItem.price){
             revert NFTMarketplace__PriceNotMet(nftAddress,tokenId, listedItem.price, msg.value)
@@ -111,4 +118,9 @@ contract NFTMarketplace {
         emit ItemBought(msg.sender, nftAddress, tokenId,listedItem.price)
     
     }
+
+    function cancelNftListing(nftAddress,tokenId) external itemIsListed(nftAddress,tokenId) isItemOwner(nftAddress,tokenId){
+        delete (s_listings[nftAddress][tokenId])
+        emit ItemCanceled(msg.sender, nftAddress, tokenId)
+    } 
 }
