@@ -10,30 +10,40 @@ error NFTMarketplace__ItemAlreadyListed( address nftAddress, uint256 tokenId);
 error NFTMarketplace__InvalidOwner( address nftAddress, uint256 tokenId);
 error NFTMarketplace__ItemNotListed( address nftAddress, uint256 tokenId);
 error NFTMarketplace__PriceNotMet( address nftAddress, uint256 tokenId, uint256 nftPrice, uint256 sentMoney);
+error NFTMarketplace__NoProceeds();
+error NFTMarketplace__WithdrawProceedsFailed();
 
 contract NFTMarketplace is ReentrenceyGuard {
     struct Listing {
         uint256 price;
         address sender;
     }
-    event ItemListed(
+
+    event eventItemListed(
         address indexed seller,
         address indexed nftAddress,
         uint256 indexed tokenId,
         uint256 indexed price
     )
 
-    event ItemBought(
+    event eventItemBought(
         address indexed buyer,
         address indexed nftAddress,
         uint256 indexed tokenId,
         uint256 nftPrice
     )
 
-    event ItemCanceled(
+    event eventItemCanceled(
         address indexed ownerAddress,
         address indexed nftAddress,
         uint256 indexed tokenId,
+    )
+
+    event eventItemUpdated(
+        address indexed ownerAddress,
+        address indexed nftAddress,
+        uint256 indexed tokenId,
+        uint256 newPrice
     )
 
     // NFT contract address -> NFT tokenId -> Listing
@@ -97,7 +107,7 @@ contract NFTMarketplace is ReentrenceyGuard {
             revert NFTMarketplace__NotApprovedForMarketplace();
         }
         s_listings[nftAddress][tokenId] = Listing(price,msg.sender)
-        emit ItemListed(msg.sender, nftAddress, tokenId, price);
+        emit eventItemListed(msg.sender, nftAddress, tokenId, price);
     }
 
     function buyItem(address nftAddress, uint256 tokenId) external payable nonReentrant itemIsListed(nftAddress, tokenId){
@@ -115,12 +125,34 @@ contract NFTMarketplace is ReentrenceyGuard {
         // transfer nft to buyer account
         IERC721(nftAddress).safeTransferFrom(listedItem.seller,msg.sender , tokenId);
 
-        emit ItemBought(msg.sender, nftAddress, tokenId,listedItem.price)
+        emit eventItemBought(msg.sender, nftAddress, tokenId,listedItem.price)
     
     }
 
     function cancelNftListing(nftAddress,tokenId) external itemIsListed(nftAddress,tokenId) isItemOwner(nftAddress,tokenId){
         delete (s_listings[nftAddress][tokenId])
-        emit ItemCanceled(msg.sender, nftAddress, tokenId)
-    } 
+        emit eventItemCanceled(msg.sender, nftAddress, tokenId)
+    }
+
+    function updateNFTPrice(nftAddress,tokenId,newPrice) external isItemListed(nftAddress,tokenId) isItemListed(nftAddress,tokenId){
+        s_listings[nftAddress][tokenId].price = newPrice;
+        emit eventItemUpdated(msg.sender,nftAddress,tokenId,newPrice)
+    }
+    function withdrawProceeds() external{
+        uint256 userProceeds = s_proceeds[msg.sender];
+        if( userProceeds <= 0){
+            revert NFTMarketplace__NoProceeds();
+        }
+        s_proceeds[msg.sender] = 0;
+        (bool success, ) = payable(msg.sender).call{value=userProceeds}("");
+
+        if(!success) {
+            revert NFTMarketplace__WithdrawProceedsFailed();
+        }
+    }
+
+
+    //////////////////////// 
+    /// getter function  //////
+    //////////////////////// 
 }
