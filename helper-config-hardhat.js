@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat")
+const { ethers } = require("hardhat");
 
 const networkConfig = {
   5: {
@@ -24,12 +24,13 @@ const networkConfig = {
     name: "mainnet",
     keepersUpdateInterval: "30",
   },
-}
-const developmentChains = ["hardhat", "localhost"]
-const VERIFICATION_BLOCK_CONFIRMATIONS = 6
+};
+const developmentChains = ["hardhat", "localhost"];
+const VERIFICATION_BLOCK_CONFIRMATIONS = 6;
 const frontEndContractsFile =
-  "../nextjs-smartcontract-lottery-fcc/constants/contractAddresses.json"
-const frontEndAbiFile = "../nextjs-smartcontract-lottery-fcc/constants/abi.json"
+  "../nextjs-smartcontract-lottery-fcc/constants/contractAddresses.json";
+const frontEndAbiFile =
+  "../nextjs-smartcontract-lottery-fcc/constants/abi.json";
 
 module.exports = {
   networkConfig,
@@ -37,4 +38,4 @@ module.exports = {
   VERIFICATION_BLOCK_CONFIRMATIONS,
   frontEndContractsFile,
   frontEndAbiFile,
-}
+};
