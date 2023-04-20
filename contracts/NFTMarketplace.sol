@@ -16,7 +16,7 @@ error NFTMarketplace__WithdrawProceedsFailed();
 contract NFTMarketplace is ReentrancyGuard {
     struct Listing {
         uint256 price;
-        address sender;
+        address seller;
     }
 
     event eventItemListed(
@@ -117,13 +117,13 @@ contract NFTMarketplace is ReentrancyGuard {
         }
         
         // update sellers balance
-        s_proceeds[listedItem.sender] = s_proceeds[listedItem.sender] + msg.value;
+        s_proceeds[listedItem.seller] = s_proceeds[listedItem.seller] + msg.value;
         
         // remove nft from seller account
         delete (s_listings[nftAddress][tokenId]);
 
         // transfer nft to buyer account
-        IERC721(nftAddress).safeTransferFrom(listedItem.sender,msg.sender , tokenId);
+        IERC721(nftAddress).safeTransferFrom(listedItem.seller,msg.sender , tokenId);
 
         emit eventItemBought(msg.sender, nftAddress, tokenId,listedItem.price);
     
